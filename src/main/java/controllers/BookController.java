@@ -1,78 +1,67 @@
 package controllers;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import beans.MockBookService;
 import models.Book;
 
 @RestController
-@RequestMapping("/book")
+@RequestMapping("/books")
 public class BookController {
 	@Autowired
 	private MockBookService bookService;
 
-	@GetMapping("/all")
+	@GetMapping("")
 	public List<Book> getList(){
-		List<Book> list = this.bookService.getList();
+		List<Book> list = bookService.getList();
+		
+//		List<String> titles = list.stream()
+//				.map(Book::getTitle)
+//				.collect(Collectors.toList());
+				
 		return list;
+	}
+	
+	@GetMapping("/addForm")
+	public String getForm(){
+		return "addView";
+	}
+	
+	@PostMapping
+	@ResponseStatus(value = HttpStatus.OK)
+	public void processPostBookForm(@RequestBody Book book){
+		bookService.add(book);
 	}
 	
 	@GetMapping("/{id}")
 	public Book getList(@PathVariable Long id){
-		return this.bookService.getById(id);
-	}
-	
-	@PostMapping("")
-	public String postBook(HttpServletRequest request){
-		try {
-			String bookJson = request.getReader().lines() 
-					.collect(Collectors.joining());
-			Book book = new ObjectMapper().readValue(bookJson, Book.class); 
-			this.bookService.add(book);
-			return "{status: ok}";
-		} catch (JsonParseException e) {
-			e.printStackTrace();
-		} catch (JsonMappingException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return "{status: error}";
+		return bookService.getById(id).orElse(null);
 	}
 	
 	@PutMapping("/{id}")
-	public String putBook(@PathVariable Long id, HttpServletRequest request){ 
-		try {
-			String bookJson = request.getReader().lines().collect(Collectors.joining());
-			Book book = new ObjectMapper().readValue(bookJson, Book.class);
-			this.bookService.update(id, book);
-			return "{status: ok}";
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return "{status: error}";
+	@ResponseStatus(value = HttpStatus.OK)
+	public void putBook(@PathVariable Long id, @RequestBody Book book){
+		bookService.update(id, book);
 	}
 
 	@DeleteMapping("/{id}")
+	@ResponseBody
 	public String deleteBook(@PathVariable Long id){
 		this.bookService.deleteById(id);
 		return "{status: deleted}";
 	}
 }
+

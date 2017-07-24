@@ -2,6 +2,7 @@ package beans;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.stereotype.Component;
@@ -29,27 +30,29 @@ public class MockBookService {
 		this.list = list;
 	}
 	
-	public Book getById(Long id){
-		Optional<Book> result = list.stream()
-			     .filter(item -> item.getId() == id)
-			     .findFirst();
+	
+	public Optional<Book> getById(Long id){
 		
-		return result.get();
+		return list.stream()
+			.filter(item -> Objects.equals(item.getId(), id))
+			.findFirst();
+		
 	}
 	
 	public void add(Book book){
-		book.setId(this.nextId++);
-		this.list.add(book);
+		book.setId(nextId++);
+		list.add(book);
 	}
+	
 	public void deleteById(Long id) {
-		Book book = this.getById(id);
-		
-		this.list.remove(book);
+		getById(id)
+		 	.ifPresent(list::remove); 
+//			.ifPresent(book -> list.remove(book));
 	}
+	
 	public void update(Long id, Book book) {
+		deleteById(id);
 		book.setId(id);
-		Book toUpdate = this.getById(id);
-		this.list.remove(toUpdate);
-		this.list.add(book);
+		list.add(book);
 	}
 }
